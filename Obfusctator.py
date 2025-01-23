@@ -11,49 +11,36 @@ def get_char():
     random_code_point = random.randint(chinese_base, chinese_end)
     return chr(random_code_point)
 
-def binary_to_chinese(binary_data):
-    chinese_base = 0x4E00
-    result = ''
+chinese_base = 0x4E00
 
-    for byte in binary_data:
-        char = chr(chinese_base + byte)
-        result += char
-    return result
+def binary_to_chinese(binary_data): return "".join([chr(chinese_base+ord(byte)) for byte in binary_data])
 
-def chinese_to_binary(chinese_str):
-    chinese_base = 0x4E00
-    binary_data = bytearray()
-
-    for char in chinese_str:
-        byte = ord(char) - chinese_base
-        binary_data.append(byte)
-
-    return bytes(binary_data)
+def chinese_to_binary(chinese_str): return "".join([chr(ord(char)-chinese_base) for char in chinese_str])
 
 lines = []
 
-with open("testing/main.py", "br") as file:
-    for line in file.readlines():
-        if line.startswith(b" ") or line.startswith(b"    "):
-            lines[len(lines)-1] = lines[len(lines)-1]+line
-        else:
-            lines.append(line)
+#with open("testing/main.py", "br") as file:
+#    for line in file.readlines():
+#        if line.startswith(b" ") or line.startswith(b"    "):
+#            lines[len(lines)-1] = lines[len(lines)-1]+line
+#        else:
+#            lines.append(line)
 
 
-execChar = get_char()
-decodeChar = get_char()
-decode2Char = get_char()
+execChar = "".join([get_char() for _ in range(random.randint(20,50))])
+decodeChar = "".join([get_char() for _ in range(random.randint(20,50))])
+decode2Char = "".join([get_char() for _ in range(random.randint(20,50))])
 
-argChar = get_char()
-byteChar = get_char()
-binDataChar = get_char()
-charChar = get_char()
+argChar = "".join([get_char() for _ in range(random.randint(20,50))])
+byteChar = "".join([get_char() for _ in range(random.randint(20,50))])
+binDataChar = "".join([get_char() for _ in range(random.randint(20,50))])
+charChar = "".join([get_char() for _ in range(random.randint(20,50))])
 
 # These i also gotta define using execs :Troll:
-bytearrayChar = get_char() # 
-chineseBaseChar = get_char() # #
-ordChar = get_char() #
-bytesChar = get_char() # 
+bytearrayChar = "".join([get_char() for _ in range(random.randint(20,50))])
+chineseBaseChar = "".join([get_char() for _ in range(random.randint(20,50))])
+ordChar = "".join([get_char() for _ in range(random.randint(20,50))])
+bytesChar = "".join([get_char() for _ in range(random.randint(20,50))]) 
 
 decode_chinese = f"""def {decode2Char}({argChar}):
     {binDataChar}={bytearrayChar}()
@@ -74,32 +61,40 @@ with open("testing/obf.py", "w", encoding="utf-8") as file:
 
 
     lines = [
-        f"from base64 import urlsafe_b64decode",
-        f"exec(urlsafe_b64decode('{urlsafe_b64encode(f"{execChar}=exec".encode()).decode()}'))", # TODO : Make these definitions also happen inside some obfuscated execs !
-        f"{execChar}(urlsafe_b64decode('{urlsafe_b64encode(f"{decodeChar}=urlsafe_b64encode".encode()).decode()}'));"
-        f"{bytesChar}=bytes"
-        f"{ordChar}=ord",
-        f"{bytearrayChar}=bytearray",
-        f"{chineseBaseChar}=0x4E00", 
-        f"{execChar}({decodeChar}(\"{urlsafe_b64encode(decode_chinese.encode()).decode()}\"))"
+        f"from base64 import urlsafe_b64decode as A",
+        f"exec(A('{urlsafe_b64encode(f"{execChar}=exec".encode()).decode()}').decode())", 
+        f"{execChar}(A('{urlsafe_b64encode(f"{decodeChar}=A".encode()).decode()}').decode())",
+        f"{execChar}({decodeChar}('{urlsafe_b64encode(f"{bytesChar}=bytes".encode()).decode()}').decode())",
+        f"{execChar}({decodeChar}('{urlsafe_b64encode(f"{ordChar}=ord".encode()).decode()}').decode())",
+        f"{execChar}({decodeChar}('{urlsafe_b64encode(f"{bytearrayChar}=bytearray".encode()).decode()}').decode())",
+        f"{execChar}({decodeChar}('{urlsafe_b64encode(f"{chineseBaseChar}=0x4E00".encode()).decode()}').decode())",
+        f"{execChar}({decodeChar}('{urlsafe_b64encode(decode_chinese.encode()).decode()}').decode())"
     ]
 
     fillers = []
     filler_chars = []
-    for _ in range(len(lines)):
+    payload_index = random.randrange(0, len(lines)-1)
+    with open("testing/main.py", "br") as payload_file:
+        payload = urlsafe_b64encode(payload_file.read()).decode()
+    print(payload)
+    payload = binary_to_chinese(f"exec(A('{payload}').decode())")
+    print(payload)
+
+    for index in range(len(lines)):
         tmp = ""
-        filler_chars.append(get_char())
-        for _ in range(random.randint(100, 300)):
-            tmp += get_char()
-            pass
+        filler_chars.append("".join([get_char() for _ in range(random.randint(20,50))]))
+        payloadlen = len(payload)
+        minlen = payloadlen-20 if payloadlen > 20 else 1
+        maxlen = payloadlen+20
+
+        tmp = payload if index==payload_index else "".join([get_char() for _ in range(random.randint(minlen, maxlen))])
+
         fillers.append(tmp)
 
     for index, line in enumerate(lines):
         file.write(f"{filler_chars[index]}='{fillers[index]}';")
-        file.write(f"{line}")
-        if not index+1==len(lines):
-            file.write(";")
+        file.write(f"{line};")
 
-    #file.write(f";{execChar}({decodeChar}('{urlsafe_b64encode(tmp.encode()).decode()}'))")
+    file.write(f"{execChar}({decode2Char}({filler_chars[payload_index]}).decode())")
 
     
